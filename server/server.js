@@ -1,12 +1,10 @@
-// server/server.js - FINAL OPTIMIZATION FOR STABILITY
+// server/server.js - FINAL, STABLE CODE FOR RENDER
 
-// 🔑 FIX 1: Use standard 'import' syntax for top-level libraries
 import express from 'express';
 import cors from 'cors';
-import { Pool } from 'pg'; // NOTE: Switched Client to Pool for better connection management
+import { Pool } from 'pg'; 
 import dotenv from 'dotenv';
-// IMPORTANT: You MUST import the controllers you need
-import apiRoutes from './routes/api_routes.js'; 
+import apiRoutes from './routes/api_routes.js'; // Ensure api_routes.js uses ESM exports
 
 // Load environment variables 
 dotenv.config();
@@ -16,21 +14,22 @@ const HOST = '0.0.0.0';
 const PORT = process.env.PORT || 5000;
 
 // --- 1. Middleware ---
-
-// 🔑 FIX 2: Universal CORS (*) to resolve the frontend error
 app.use(cors()); 
-
 app.use(express.json({ limit: '5mb' })); 
 
 // --- 2. Database Connection Setup (Using Pool for Stability) ---
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }, 
-    // 🔑 FINAL FIX: Add connection pooling parameters to prevent sudden closes
-    max: 5,                       // Max number of clients in the pool
-    idleTimeoutMillis: 30000,     // Close idle clients after 30s
-    connectionTimeoutMillis: 2000, // Give up trying to connect after 2s
+    // IMPORTANT: The DATABASE_URL MUST include the ?sslmode=require flag appended to the end.
+    connectionString: process.env.DATABASE_URL, 
+    
+    // 🔑 FINAL FIX: Simplified SSL config to explicitly trust the connection
+    ssl: {
+        rejectUnauthorized: false,
+    }, 
+    max: 5,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000, 
 });
 
 // Use an async function to handle the connection and server start
@@ -43,13 +42,12 @@ async function startServer() {
 
         // Pass the connection pool instance to the request object
         app.use((req, res, next) => {
-            // Attach the pool itself, allowing controllers to get a client on demand
             req.db = pool; 
             next();
         });
 
         // --- 3. Routes ---
-        app.use('/api', apiRoutes);
+        app.use('/api', apiRoutes); 
 
         // Simple health check endpoint 
         app.get('/', (req, res) => {
@@ -62,7 +60,9 @@ async function startServer() {
         });
 
     } catch (err) {
+        // Log the certificate error explicitly
         console.error('FATAL ERROR: Failed to connect to database or start server.', err.stack);
+        // The error is likely the certificate; exit if the DB connection fails
         process.exit(1); 
     }
 }
