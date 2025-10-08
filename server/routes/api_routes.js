@@ -4,23 +4,33 @@
 import express from 'express';
 const router = express.Router();
 
-// 🔑 FINAL FIX: Use standard, synchronous ESM imports for controllers
-// This works because the imported files use 'export default'.
+// 🔑 FINAL FIX: Import controllers using default imports
 import geminiController from '../controllers/gemini_controller.js';
 import wellnessController from '../controllers/wellness_controller.js';
-// NOTE: Node now knows that imported 'default' objects are the controllers.
+// NOTE: We assume you have a similar import for authController too.
 
 
 // --- AI and Curriculum Routes ---
 
-// 3. Use the imported controller objects directly
+// The controller object (geminiController) is the *actual module*, 
+// so we access functions directly as properties.
+
+// POST /api/curriculum 
 router.post('/curriculum', geminiController.generateCurriculum);
 
+// POST /api/notes-explain
 router.post('/notes-explain', geminiController.explainUploadedNotes);
 
 // --- Wellness and AFL Routes ---
 
+// POST /api/stress-trigger 
 router.post('/stress-trigger', wellnessController.triggerAFL);
+
+
+// 🔑 Add the Auth Route needed for login to work
+// Assuming you completed auth_controller.js with an ESM export
+import authController from '../controllers/auth_controller.js'; 
+router.post('/auth/login', authController.loginUser);
 
 
 // 4. Export the router using the ESM standard
