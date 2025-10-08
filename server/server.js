@@ -22,9 +22,18 @@ const PORT = process.env.PORT || 5000;
 
 // --- 1. Middleware ---
 
-const allowedOrigin = process.env.FRONTEND_URL || '*';
-app.use(cors({ origin: allowedOrigin })); 
+// server/server.js (FINAL CORS FIX)
 
+// --- 1. Middleware ---
+
+// 🔑 FIX: Use the simple cors() middleware to accept all origins (*).
+// This is the fastest way to guarantee the CORS header is sent.
+app.use(cors()); 
+
+// Allows parsing JSON request bodies (up to 5MB, needed for image base64 upload)
+app.use(express.json({ limit: '5mb' })); 
+
+// ... (rest of the file remains the same)
 app.use(express.json({ limit: '5mb' })); 
 
 // --- 2. Database Connection Setup ---
