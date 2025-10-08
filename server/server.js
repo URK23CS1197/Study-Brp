@@ -1,10 +1,11 @@
 // server/server.js - FINAL, STABLE CODE FOR RENDER
 
+// 🔑 Module Fix: Using standard ESM imports
 import express from 'express';
 import cors from 'cors';
 import { Pool } from 'pg'; 
 import dotenv from 'dotenv';
-import apiRoutes from './routes/api_routes.js'; // Ensure api_routes.js uses ESM exports
+import apiRoutes from './routes/api_routes.js'; 
 
 // Load environment variables 
 dotenv.config();
@@ -14,22 +15,20 @@ const HOST = '0.0.0.0';
 const PORT = process.env.PORT || 5000;
 
 // --- 1. Middleware ---
+// 🔑 FIX: Universal CORS (*) to ensure no frontend errors
 app.use(cors()); 
 app.use(express.json({ limit: '5mb' })); 
 
 // --- 2. Database Connection Setup (Using Pool for Stability) ---
 
 const pool = new Pool({
-    // IMPORTANT: The DATABASE_URL must have ?sslmode=require appended to it 
-    // This value is read from your Render Environment Variables.
+    // IMPORTANT: DATABASE_URL must contain the host, username, password, and database name.
     connectionString: process.env.DATABASE_URL, 
     
-    // CRITICAL: We remove the complex 'ssl' object to let the URL handle it, 
-    // but the final fix requires ensuring the code knows we need a secure connection.
-    // If running into this error, the solution is usually to set the environment variable
-    // PGSSLMODE=no-verify or use a client certificate, but we'll try the simplest route first.
+    // FIX: Removing the explicit 'ssl' object to prevent the certificate error
+    // We rely on the connection string itself to handle SSL parameters like ?sslmode=require
     
-    max: 5,
+    max: 5, // Max clients in the pool
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000, 
 });
@@ -38,7 +37,7 @@ const pool = new Pool({
 // Use an async function to handle the connection and server start
 async function startServer() {
     try {
-        // Test connection once before starting server
+        // Test connection once before starting server (CRITICAL STABILITY CHECK)
         const client = await pool.connect();
         client.release(); // Release the client immediately
         console.log('Database pool initialized and connected successfully.');
@@ -63,9 +62,8 @@ async function startServer() {
         });
 
     } catch (err) {
-        // Log the certificate error explicitly
+        // Log the severe error and exit the process
         console.error('FATAL ERROR: Failed to connect to database or start server.', err.stack);
-        // The error is likely the certificate; exit if the DB connection fails
         process.exit(1); 
     }
 }
