@@ -2,7 +2,8 @@
 
 // 🔑 FIX 1: Convert require to import
 import { GoogleGenAI } from '@google/genai';
-// NOTE: We assume process.env.GEMINI_API_KEY is available from Render
+
+// Initialize Gemini (key is read from Render environment variables)
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 
@@ -12,10 +13,12 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
  */
 const generateCurriculum = async (req, res) => {
     const { topic, goal, userId } = req.body;
-    // req.db is passed via Express middleware
-    const client = req.db; 
+    
+    // 🔑 FIX 3: Get a client from the POOL before starting the transaction
+    const client = await req.db.connect(); 
 
     if (!topic || !userId) {
+        client.release(); // Release client if early exit
         return res.status(400).json({ error: 'Missing topic or userId.' });
     }
 
@@ -72,6 +75,8 @@ const generateCurriculum = async (req, res) => {
         
         console.error("Curriculum Generation Error:", error);
         res.status(500).json({ error: 'Failed to generate curriculum via Gemini.', details: error.message });
+    } finally {
+        client.release(); // 🔑 IMPORTANT: Release the client back to the pool
     }
 };
 
