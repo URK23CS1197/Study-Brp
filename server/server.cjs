@@ -1,34 +1,33 @@
-// server/server.js - Optimized for Render Deployment
+// server/server.cjs - Optimized for Render Deployment
 
-const express = require('express');
-const cors = require('cors');
-const { Client } = require('pg');
-const dotenv = require('dotenv');
+// 🔑 FINAL FIX: Use standard 'import' syntax for top-level libraries
+import express from 'express';
+import cors from 'cors';
+import { Client } from 'pg';
+import dotenv from 'dotenv';
 
 // Load environment variables (critical for local testing, safe for Render)
 dotenv.config();
 
-const apiRoutes = require('./routes/api_routes');
+// NOTE: We MUST keep the internal route loader as 'require' since 
+// the router files were written in CommonJS format (module.exports).
+const apiRoutes = require('./routes/api_routes'); 
 
 const app = express();
-// 🔑 CRITICAL FIX: Use '0.0.0.0' to ensure Render's load balancer detects the service
 const HOST = '0.0.0.0'; 
 const PORT = process.env.PORT || 5000;
 
 // --- 1. Middleware ---
 
-// Configure CORS using the environment variable for the frontend URL
 const allowedOrigin = process.env.FRONTEND_URL || '*';
 app.use(cors({ origin: allowedOrigin })); 
 
-// Allows parsing JSON request bodies (up to 5MB, needed for image base64 upload)
 app.use(express.json({ limit: '5mb' })); 
 
 // --- 2. Database Connection Setup ---
 
 const dbClient = new Client({
     connectionString: process.env.DATABASE_URL,
-    // Render requires this when connecting from an external service (like your Express app)
     ssl: { rejectUnauthorized: false } 
 });
 
@@ -45,7 +44,6 @@ async function startServer() {
         });
 
         // --- 3. Routes ---
-
         app.use('/api', apiRoutes);
 
         // Simple health check endpoint (used by Render for status checks)
@@ -55,14 +53,12 @@ async function startServer() {
 
         // --- 4. Server Start (CRITICAL FIX APPLIED HERE) ---
 
-        // 🔑 FIX: Bind to both PORT and HOST to prevent the 'Timed Out' error on Render
         app.listen(PORT, HOST, () => {
             console.log(`Server running and listening on http://${HOST}:${PORT}`);
         });
 
     } catch (err) {
         console.error('FATAL ERROR: Failed to connect to database or start server.', err.stack);
-        // Exit process if DB connection fails
         process.exit(1); 
     }
 }
