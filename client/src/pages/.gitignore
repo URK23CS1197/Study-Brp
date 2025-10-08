@@ -1,0 +1,11 @@
+# Ignore Node module folders
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Ignore compiled/build folders
+client/dist/ 
+server/build/ 
+
+# Ignore local environment files (security risk)
+.env

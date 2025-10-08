@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+      /* Base/Reset: Ensure clean starting point */
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+      }
+      
+      /* Animation Keyframes: Your original 'float' animation */
+      @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
+      }
+      
+      /* Custom Utility Class */
+      .animate-float {
+        animation: float 6s ease-in-out infinite;
+      }
+    </style>
+    
+    <title>LearnAI - AI Study Assistant</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
