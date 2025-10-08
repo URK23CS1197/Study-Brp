@@ -1,10 +1,14 @@
 // server/routes/api_routes.js
 
-const express = require('express');
+// 1. Convert require to import for Express
+import express from 'express';
 const router = express.Router();
 
-const geminiController = require('../controllers/gemini_controller');
-const wellnessController = require('../controllers/wellness_controller');
+// 2. Convert internal controller requires to imports
+// NOTE: These files (gemini_controller.js, etc.) must also use module.exports for now.
+const geminiController = require('../controllers/gemini_controller.js');
+const wellnessController = require('../controllers/wellness_controller.js');
+// Ensure ALL internal file requires include the .js extension for ESM environment.
 
 // --- AI and Curriculum Routes ---
 
@@ -19,10 +23,9 @@ router.post('/notes-explain', geminiController.explainUploadedNotes);
 // POST /api/stress-trigger (Maps to triggerAFL function)
 router.post('/stress-trigger', wellnessController.triggerAFL);
 
-// --- Progress Routes (Example) ---
-// Note: For a hackathon, simple progress updates can be handled via direct POST/PUT 
-// and calculated in the controller, as dedicated database triggers are complex to set up quickly.
+// --- Progress Routes ---
+// POST /api/activity-complete (Example using the controller logic)
 // router.post('/activity-complete', progressController.completeActivity); 
 
-
-module.exports = router;
+// 3. Convert module.exports to export default
+export default router;
