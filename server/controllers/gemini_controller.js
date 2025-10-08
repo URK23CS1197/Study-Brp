@@ -1,17 +1,19 @@
-// server/controllers/gemini_controller.js - ENHANCED VERSION
+// server/controllers/gemini_controller.js - ENHANCED VERSION (ESM Compliant)
 
-const { GoogleGenAI } = require('@google/genai');
-
-// Initialize Gemini (API key is read from Render environment variables)
+// 🔑 FIX 1: Convert require to import
+import { GoogleGenAI } from '@google/genai';
+// NOTE: We assume process.env.GEMINI_API_KEY is available from Render
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 /**
  * Generates a structured learning path using Gemini and saves it to the DB
  * using a TRANSACTION to ensure data consistency.
  */
-exports.generateCurriculum = async (req, res) => {
+const generateCurriculum = async (req, res) => {
     const { topic, goal, userId } = req.body;
-    const client = req.db;
+    // req.db is passed via Express middleware
+    const client = req.db; 
 
     if (!topic || !userId) {
         return res.status(400).json({ error: 'Missing topic or userId.' });
@@ -37,10 +39,10 @@ exports.generateCurriculum = async (req, res) => {
         try {
             curriculumData = JSON.parse(response.text);
             if (!curriculumData || !Array.isArray(curriculumData.activities)) {
-                 throw new Error("AI returned invalid JSON structure.");
+                throw new Error("AI returned invalid JSON structure.");
             }
         } catch (parseError) {
-             throw new Error(`Invalid AI response format: ${parseError.message}`);
+            throw new Error(`Invalid AI response format: ${parseError.message}`);
         }
         
         // 2. Save Path to DB (Part of Transaction)
@@ -77,7 +79,7 @@ exports.generateCurriculum = async (req, res) => {
 /**
  * Explains uploaded notes using Gemini Vision.
  */
-exports.explainUploadedNotes = async (req, res) => {
+const explainUploadedNotes = async (req, res) => {
     const { base64Image, question, mimeType } = req.body;
     
     if (!base64Image || !question) {
@@ -103,4 +105,10 @@ exports.explainUploadedNotes = async (req, res) => {
         console.error("Notes Explanation Error:", error);
         res.status(500).json({ error: 'Failed to process notes via Gemini Vision.' });
     }
+};
+
+// 🔑 FIX 2: Export all functions using the ESM standard
+export default {
+    generateCurriculum,
+    explainUploadedNotes
 };
