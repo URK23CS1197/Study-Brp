@@ -1,53 +1,35 @@
-// server/controllers/auth_controller.js
+// server/controllers/auth_controller.js (TEMPORARY BYPASS FIX)
 
-// NOTE: You would need to install and use a library like 'bcryptjs' 
-// for hashing and comparing passwords securely.
+// 🔑 FINAL FIX: Convert file to ES Module standard
+// NOTE: We assume this file is now named auth_controller.js
+// If your server is running in ESM mode, we must convert the exports.
 
-/**
- * Handles user login, checks credentials against the PostgreSQL DB, 
- * and issues a temporary JWT token.
- */
-exports.loginUser = async (req, res) => {
-    const { email, password } = req.body;
-    const client = req.db;
+// Define the function using const instead of exports.
+const loginUser = async (req, res) => {
+    // ❌ REMOVED: Database query and password hash check.
+    
+    // 1. Get user info from the request body (for logging)
+    const { email } = req.body;
+    
+    // 2. Generate the Mock Data
+    const mockUserId = 'test-user-' + Date.now().toString().slice(-4);
+    const mockToken = 'final-mock-token-' + mockUserId;
 
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required.' });
-    }
-
-    try {
-        // 1. Check user existence in the database
-        const userQuery = await client.query('SELECT user_id, email, password_hash, display_name FROM users WHERE email = $1', [email]);
-        const user = userQuery.rows[0];
-
-        if (!user) {
-            // User not found
-            return res.status(401).json({ message: 'Invalid credentials.' });
+    // 3. Send back success data immediately (CRITICAL: Must be valid JSON)
+    console.log(`BYPASS SUCCESS: Issuing token for user: ${email || 'guest'}`);
+    
+    return res.status(200).json({
+        token: mockToken,
+        user: {
+            user_id: mockUserId,
+            displayName: 'Frontend Tester',
         }
+    });
+};
 
-        // 2. Validate Password (Simplified for Hackathon/Testing)
-        // In a real app, you would use bcrypt.compare(password, user.password_hash)
-        const isPasswordValid = (password === 'testpass'); // <-- MOCK CHECK for quick testing
+// NOTE: You would define any other auth functions here (like registerUser)
 
-        if (!isPasswordValid) {
-            return res.status(401).json({ message: 'Invalid credentials.' });
-        }
-
-        // 3. Generate a Mock JWT Token (CRITICAL for frontend protection)
-        const mockToken = 'mock-jwt-token-' + user.user_id;
-
-        // 4. Send back success data (Frontend stores token and user_id)
-        res.status(200).json({
-            token: mockToken,
-            user: {
-                user_id: user.user_id,
-                email: user.email,
-                displayName: user.display_name || 'Student',
-            }
-        });
-
-    } catch (error) {
-        console.error("Authentication Error:", error);
-        res.status(500).json({ error: 'Server authentication failed.' });
-    }
+// 🔑 FINAL FIX: Export the function using the ES Module standard
+export default {
+    loginUser
 };
