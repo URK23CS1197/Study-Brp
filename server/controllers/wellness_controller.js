@@ -1,8 +1,11 @@
-// server/controllers/wellness_controller.js
+// server/controllers/wellness_controller.js (ESM Compliant)
 
-const { GoogleGenAI } = require('@google/genai');
+// 🔑 FIX 1: Convert require to import
+import { GoogleGenAI } from '@google/genai';
 
+// Initialize Gemini (key is read from Render environment variables)
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 
 /**
  * Schedules a break using an external Calendar API (Placeholder).
@@ -33,9 +36,9 @@ const suggestAFLActivity = async (activityTitle) => {
 /**
  * Main function triggered by the frontend's Stress Monitor (AFL Trigger).
  */
-exports.triggerAFL = async (req, res) => {
+const triggerAFL = async (req, res) => { // Renamed from exports.triggerAFL
     const { userId, pathId, currentActivityTitle } = req.body;
-    const client = req.db;
+    const client = req.db; // req.db is the PostgreSQL client instance
     
     if (!userId || !pathId) {
         return res.status(400).json({ error: 'Missing user or path ID.' });
@@ -48,13 +51,13 @@ exports.triggerAFL = async (req, res) => {
         // 2. Affective Feedback Loop (AFL) Trigger
         const newActivity = await suggestAFLActivity(currentActivityTitle);
 
-        // 3. Insert new activity into the path
+        // 3. Insert new activity into the path (PostgreSQL insert)
         await client.query(
             'INSERT INTO activities (path_id, title, type, url, status) VALUES ($1, $2, $3, $4, $5)',
             [pathId, newActivity.title, newActivity.type, newActivity.url, 'TO_DO']
         );
         
-        res.status(200).json({ 
+        return res.status(200).json({ 
             success: true, 
             message: "Break scheduled. New supportive activity added.",
             newActivity: newActivity,
@@ -63,6 +66,12 @@ exports.triggerAFL = async (req, res) => {
         
     } catch (error) {
         console.error("Wellness/AFL Error:", error);
-        res.status(500).json({ error: 'Failed to trigger AFL process.' });
+        // Do NOT roll back here, as this is just a single write, not a transaction block.
+        return res.status(500).json({ error: 'Failed to trigger AFL process.', details: error.message });
     }
+};
+
+// 🔑 FIX 2: Export the functions using the ES Module standard (single default export)
+export default {
+    triggerAFL
 };
