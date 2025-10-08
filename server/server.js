@@ -1,17 +1,20 @@
-// server/server.cjs - Optimized for Render Deployment
+// server/server.js - FINAL OPTIMIZATION FOR RENDER DEPLOYMENT
 
-// 🔑 FINAL FIX: Use standard 'import' syntax for top-level libraries
+// 🔑 FIX 1: The external dependency imports are correct.
 import express from 'express';
 import cors from 'cors';
 import { Client } from 'pg';
 import dotenv from 'dotenv';
+// IMPORTANT: You must also import the GoogleGenAI client if using it directly in this file
+// import { GoogleGenAI } from '@google/genai'; 
 
-// Load environment variables (critical for local testing, safe for Render)
+// Load environment variables 
 dotenv.config();
 
-// NOTE: We MUST keep the internal route loader as 'require' since 
-// the router files were written in CommonJS format (module.exports).
-const apiRoutes = require('./routes/api_routes'); 
+// 🔑 FIX 2: Convert internal route loader from 'require()' to 'import' 
+// This resolves the ReferenceError crash in Node v22 (ESM mode).
+import apiRoutes from './routes/api_routes.js'; 
+
 
 const app = express();
 const HOST = '0.0.0.0'; 
@@ -31,34 +34,34 @@ const dbClient = new Client({
     ssl: { rejectUnauthorized: false } 
 });
 
-// Use an async function to handle the connection and server start
 async function startServer() {
     try {
         await dbClient.connect();
         console.log('Database connected successfully to Render PostgreSQL');
 
-        // Pass the DB client instance to the request object (available as req.db in controllers)
         app.use((req, res, next) => {
             req.db = dbClient;
             next();
         });
 
         // --- 3. Routes ---
-        app.use('/api', apiRoutes);
+        app.use('/api', apiRoutes); // This now uses the imported router
 
-        // Simple health check endpoint (used by Render for status checks)
+        // Simple health check endpoint 
         app.get('/', (req, res) => {
             res.status(200).json({ message: 'AI Study Assistant Backend is running!' });
         });
 
-        // --- 4. Server Start (CRITICAL FIX APPLIED HERE) ---
+        // --- 4. Server Start ---
 
+        // Bind to both PORT and HOST to prevent the 'Timed Out' error on Render
         app.listen(PORT, HOST, () => {
             console.log(`Server running and listening on http://${HOST}:${PORT}`);
         });
 
     } catch (err) {
         console.error('FATAL ERROR: Failed to connect to database or start server.', err.stack);
+        // Exit process if DB connection fails
         process.exit(1); 
     }
 }
