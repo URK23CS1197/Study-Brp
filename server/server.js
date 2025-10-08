@@ -11,12 +11,13 @@ dotenv.config();
 const apiRoutes = require('./routes/api_routes');
 
 const app = express();
+// 🔑 CRITICAL FIX: Use '0.0.0.0' to ensure Render's load balancer detects the service
+const HOST = '0.0.0.0'; 
 const PORT = process.env.PORT || 5000;
 
 // --- 1. Middleware ---
 
 // Configure CORS using the environment variable for the frontend URL
-// This ensures only your frontend can access the API
 const allowedOrigin = process.env.FRONTEND_URL || '*';
 app.use(cors({ origin: allowedOrigin })); 
 
@@ -52,10 +53,11 @@ async function startServer() {
             res.status(200).json({ message: 'AI Study Assistant Backend is running!' });
         });
 
-        // --- 4. Server Start ---
+        // --- 4. Server Start (CRITICAL FIX APPLIED HERE) ---
 
-        app.listen(PORT, () => {
-            console.log(`Server listening on port ${PORT}`);
+        // 🔑 FIX: Bind to both PORT and HOST to prevent the 'Timed Out' error on Render
+        app.listen(PORT, HOST, () => {
+            console.log(`Server running and listening on http://${HOST}:${PORT}`);
         });
 
     } catch (err) {
