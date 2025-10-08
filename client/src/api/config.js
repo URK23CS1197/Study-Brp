@@ -1,5 +1,6 @@
-// client/src/api/config.js
+// client/src/api/config.js (FINAL CORRECTED VERSION)
 
-// IMPORTANT: Replace this placeholder with your actual Render Web Service URL
-// Example: 'https://ai-study-assistant.onrender.com/api'
-export const BASE_API_URL = 'postgresql://studyuser:sCD97EwpOdQdxIA7x2EL9jQMC2homIGB@dpg-d3j05pl6ubrc739v6c50-a.oregon-postgres.render.com/studydb_z3br';
+// ❌ Incorrect: 'postgresql://...' (This is the secure database connection)
+
+// 🔑 CORRECT: Use the public HTTPS URL for your deployed Express API
+export const BASE_API_URL = 'https://study-bro-whiv.onrender.com/api';
