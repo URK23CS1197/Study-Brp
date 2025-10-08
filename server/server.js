@@ -1,20 +1,15 @@
-// server/server.js - FINAL OPTIMIZATION FOR RENDER DEPLOYMENT
+// server/server.js - FINAL OPTIMIZATION FOR STABILITY
 
-// 🔑 FIX 1: The external dependency imports are correct.
+// 🔑 FIX 1: Use standard 'import' syntax for top-level libraries
 import express from 'express';
 import cors from 'cors';
-import { Client } from 'pg';
+import { Pool } from 'pg'; // NOTE: Switched Client to Pool for better connection management
 import dotenv from 'dotenv';
-// IMPORTANT: You must also import the GoogleGenAI client if using it directly in this file
-// import { GoogleGenAI } from '@google/genai'; 
+// IMPORTANT: You MUST import the controllers you need
+import apiRoutes from './routes/api_routes.js'; 
 
 // Load environment variables 
 dotenv.config();
-
-// 🔑 FIX 2: Convert internal route loader from 'require()' to 'import' 
-// This resolves the ReferenceError crash in Node v22 (ESM mode).
-import apiRoutes from './routes/api_routes.js'; 
-
 
 const app = express();
 const HOST = '0.0.0.0'; 
@@ -22,39 +17,39 @@ const PORT = process.env.PORT || 5000;
 
 // --- 1. Middleware ---
 
-// server/server.js (FINAL CORS FIX)
-
-// --- 1. Middleware ---
-
-// 🔑 FIX: Use the simple cors() middleware to accept all origins (*).
-// This is the fastest way to guarantee the CORS header is sent.
+// 🔑 FIX 2: Universal CORS (*) to resolve the frontend error
 app.use(cors()); 
 
-// Allows parsing JSON request bodies (up to 5MB, needed for image base64 upload)
 app.use(express.json({ limit: '5mb' })); 
 
-// ... (rest of the file remains the same)
-app.use(express.json({ limit: '5mb' })); 
+// --- 2. Database Connection Setup (Using Pool for Stability) ---
 
-// --- 2. Database Connection Setup ---
-
-const dbClient = new Client({
+const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false } 
+    ssl: { rejectUnauthorized: false }, 
+    // 🔑 FINAL FIX: Add connection pooling parameters to prevent sudden closes
+    max: 5,                       // Max number of clients in the pool
+    idleTimeoutMillis: 30000,     // Close idle clients after 30s
+    connectionTimeoutMillis: 2000, // Give up trying to connect after 2s
 });
 
+// Use an async function to handle the connection and server start
 async function startServer() {
     try {
-        await dbClient.connect();
-        console.log('Database connected successfully to Render PostgreSQL');
+        // Test connection once before starting server
+        const client = await pool.connect();
+        client.release(); // Release the client immediately
+        console.log('Database pool initialized and connected successfully.');
 
+        // Pass the connection pool instance to the request object
         app.use((req, res, next) => {
-            req.db = dbClient;
+            // Attach the pool itself, allowing controllers to get a client on demand
+            req.db = pool; 
             next();
         });
 
         // --- 3. Routes ---
-        app.use('/api', apiRoutes); // This now uses the imported router
+        app.use('/api', apiRoutes);
 
         // Simple health check endpoint 
         app.get('/', (req, res) => {
@@ -62,15 +57,12 @@ async function startServer() {
         });
 
         // --- 4. Server Start ---
-
-        // Bind to both PORT and HOST to prevent the 'Timed Out' error on Render
         app.listen(PORT, HOST, () => {
             console.log(`Server running and listening on http://${HOST}:${PORT}`);
         });
 
     } catch (err) {
         console.error('FATAL ERROR: Failed to connect to database or start server.', err.stack);
-        // Exit process if DB connection fails
         process.exit(1); 
     }
 }
