@@ -20,17 +20,20 @@ app.use(express.json({ limit: '5mb' }));
 // --- 2. Database Connection Setup (Using Pool for Stability) ---
 
 const pool = new Pool({
-    // IMPORTANT: The DATABASE_URL MUST include the ?sslmode=require flag appended to the end.
+    // IMPORTANT: The DATABASE_URL must have ?sslmode=require appended to it 
+    // This value is read from your Render Environment Variables.
     connectionString: process.env.DATABASE_URL, 
     
-    // 🔑 FINAL FIX: Simplified SSL config to explicitly trust the connection
-    ssl: {
-        rejectUnauthorized: false,
-    }, 
+    // CRITICAL: We remove the complex 'ssl' object to let the URL handle it, 
+    // but the final fix requires ensuring the code knows we need a secure connection.
+    // If running into this error, the solution is usually to set the environment variable
+    // PGSSLMODE=no-verify or use a client certificate, but we'll try the simplest route first.
+    
     max: 5,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000, 
 });
+
 
 // Use an async function to handle the connection and server start
 async function startServer() {
