@@ -3,8 +3,7 @@
 import express from 'express';
 const router = express.Router();
 
-// 🔑 FINAL FIX: Change all imports to the '* as Module' pattern.
-// This resolves the Node runtime confusion by loading all exports under a specific object name.
+// 1. Import all modules using the import * as syntax
 import * as geminiModule from '../controllers/gemini_controller.js';
 import * as wellnessModule from '../controllers/wellness_controller.js';
 import * as authModule from '../controllers/auth_controller.js'; 
@@ -12,20 +11,19 @@ import * as authModule from '../controllers/auth_controller.js';
 
 // --- Routes ---
 
-// Now, access the functions using the module name and the property name:
+// FIX: We access the function directly as a property of the imported module object.
 
-// POST /api/curriculum (The crash point)
-// You need to access the function as: geminiModule.default.generateCurriculum
-router.post('/curriculum', geminiModule.default.generateCurriculum);
+// POST /api/curriculum (Fixes Line 19)
+router.post('/curriculum', geminiModule.generateCurriculum);
 
 // POST /api/notes-explain
-router.post('/notes-explain', geminiModule.default.explainUploadedNotes);
+router.post('/notes-explain', geminiModule.explainUploadedNotes);
 
 // POST /api/stress-trigger 
-router.post('/stress-trigger', wellnessModule.default.triggerAFL);
+router.post('/stress-trigger', wellnessModule.triggerAFL);
 
 // POST /api/auth/login
-router.post('/auth/login', authModule.default.loginUser);
+router.post('/auth/login', authModule.loginUser);
 
 
 // Export the router
