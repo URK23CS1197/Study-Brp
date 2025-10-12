@@ -1,10 +1,6 @@
-// server/controllers/gemini_controller.js (FINAL STABLE VERSION)
+// server/controllers/gemini_controller.js
 
-// 🔑 FIX 1: Ensure imports use ESM syntax
-import { GoogleGenAI } from '@google/genai';
-
-// Initialize Gemini (API key is read from Render environment variables)
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// ... (Imports and ai initialization remain the same) ...
 
 
 /**
@@ -26,18 +22,44 @@ const generateCurriculum = async (req, res) => {
         // --- Transaction Starts ---
         await client.query('BEGIN');
         
-        // 1. Gemini call and parsing logic here...
-        // NOTE: Ensure insertion logic is using 'client.query' throughout.
-        const prompt = `Act as a curriculum expert. Generate a detailed, structured learning path for '${topic}' to achieve the goal: '${goal}'. Output the plan as a single JSON object with a 'activities' array.`;
+        // 1. Define the PROMPT variable correctly (Missing previously!)
+        const prompt = `Act as a curriculum expert. Generate a detailed, structured learning path for '${topic}' 
+        to achieve the goal: '${goal}'. Output the plan as a single JSON object with a 'activities' array.
+        Ensure the 'activities' array is present and is a list of objects with 'title', 'type', and 'url' fields.`;
         
-        const response = await ai.models.generateContent({ /* ... */ });
+        // 2. Gemini call and robust parsing
+        const response = await ai.models.generateContent({ 
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: { responseMimeType: "application/json" },
+        });
+        
         let curriculumData = JSON.parse(response.text);
 
-        // 2. Insert Path/Activities using client.query
-        // ... (original insertion logic remains here) ...
+        if (!curriculumData || !Array.isArray(curriculumData.activities)) {
+            throw new Error("AI returned invalid JSON structure.");
+        }
 
+        // 3. Insert Path (CRITICAL: Needs original insertion logic)
+        const pathResult = await client.query(
+            'INSERT INTO learning_paths (user_id, topic, overall_progress) VALUES ($1, $2, $3) RETURNING path_id',
+            [userId, topic, 0.00]
+        );
+        const pathId = pathResult.rows[0].path_id;
+
+        // 4. Save Activities (CRITICAL: Needs original insertion logic)
+        const activityInserts = curriculumData.activities.map(act =>
+            client.query(
+                'INSERT INTO activities (path_id, title, type, url, status) VALUES ($1, $2, $3, $4, $5)',
+                [pathId, act.title, act.type || 'unknown', act.url || '', 'TO_DO']
+            )
+        );
+        await Promise.all(activityInserts);
+        
+        // 5. Commit the transaction
         await client.query('COMMIT');
-        res.status(201).json({ success: true, pathId: 'mock-id' });
+
+        res.status(201).json({ success: true, pathId });
         
     } catch (error) {
         if (client) await client.query('ROLLBACK');
@@ -51,32 +73,4 @@ const generateCurriculum = async (req, res) => {
     }
 };
 
-
-/**
- * Explains uploaded notes using Gemini Vision.
- */
-const explainUploadedNotes = async (req, res) => {
-    // 🔑 NOTE: Since this function does NOT access PostgreSQL, we do NOT need pool.connect/release.
-    const { base64Image, question, mimeType } = req.body;
-    
-    if (!base64Image || !question) {
-        return res.status(400).json({ error: 'Missing image or question.' });
-    }
-    
-    try {
-        // ... (Gemini API call logic remains the same) ...
-        const response = await ai.models.generateContent({ /* ... */ });
-
-        res.status(200).json({ success: true, explanation: response.text });
-    } catch (error) {
-        console.error("Notes Explanation Error:", error);
-        res.status(500).json({ error: 'Failed to process notes via Gemini Vision.' });
-    }
-};
-
-
-// 🔑 FINAL EXPORT: Export all functions using the ESM standard
-export default {
-    generateCurriculum,
-    explainUploadedNotes
-};
+// ... (explainUploadedNotes and export default block remains the same) ...
