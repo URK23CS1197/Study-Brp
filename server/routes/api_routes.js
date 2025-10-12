@@ -1,35 +1,32 @@
-// server/routes/api_routes.js (FINAL, CRASH-FREE VERSION)
+// server/routes/api_routes.js (FINAL FIX for Mismatch)
 
 // 1. Import dependencies using standard ESM syntax
 import express from 'express';
 const router = express.Router();
 
-// 🔑 FINAL FIX: Import controllers using default imports
+// 🔑 FINAL FIX: Use NAMED IMPORTS to access functions directly from the controller.
+// NOTE: This assumes your controllers (gemini, wellness) use 'export default { ... }' 
+// as their final export, which is what we established.
 import geminiController from '../controllers/gemini_controller.js';
 import wellnessController from '../controllers/wellness_controller.js';
-// NOTE: We assume you have a similar import for authController too.
+import authController from '../controllers/auth_controller.js'; // Ensure this is imported too
 
 
-// --- AI and Curriculum Routes ---
+// --- Routes ---
 
-// The controller object (geminiController) is the *actual module*, 
-// so we access functions directly as properties.
+// The controller objects (geminiController, wellnessController) are the *actual modules*, 
+// so we access the functions as properties on the imported object.
 
 // POST /api/curriculum 
 router.post('/curriculum', geminiController.generateCurriculum);
 
-// POST /api/notes-explain
+// POST /api/notes-explain 
 router.post('/notes-explain', geminiController.explainUploadedNotes);
-
-// --- Wellness and AFL Routes ---
 
 // POST /api/stress-trigger 
 router.post('/stress-trigger', wellnessController.triggerAFL);
 
-
-// 🔑 Add the Auth Route needed for login to work
-// Assuming you completed auth_controller.js with an ESM export
-import authController from '../controllers/auth_controller.js'; 
+// POST /api/auth/login
 router.post('/auth/login', authController.loginUser);
 
 
