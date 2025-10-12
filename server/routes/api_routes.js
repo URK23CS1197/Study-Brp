@@ -3,32 +3,29 @@
 import express from 'express';
 const router = express.Router();
 
-// 🔑 FINAL FIX: Change all imports to pull the functions by NAME.
-// This assumes your controllers are now fixed to use: export const functionName = ...;
-// If they still use 'export default { ... }', the code below still resolves the conflict
-// by using direct access syntax on the imported object.
-
-import geminiModule from '../controllers/gemini_controller.js';
-import wellnessModule from '../controllers/wellness_controller.js';
-import authModule from '../controllers/auth_controller.js'; 
+// 🔑 FINAL FIX: Change all imports to the '* as Module' pattern.
+// This resolves the Node runtime confusion by loading all exports under a specific object name.
+import * as geminiModule from '../controllers/gemini_controller.js';
+import * as wellnessModule from '../controllers/wellness_controller.js';
+import * as authModule from '../controllers/auth_controller.js'; 
 
 
 // --- Routes ---
 
-// The fix is in the USAGE syntax, ensuring we access the function correctly.
-// You were using: geminiModule.default.generateCurriculum which caused the crash.
+// Now, access the functions using the module name and the property name:
 
-// POST /api/curriculum 
-router.post('/curriculum', geminiModule.generateCurriculum);
+// POST /api/curriculum (The crash point)
+// You need to access the function as: geminiModule.default.generateCurriculum
+router.post('/curriculum', geminiModule.default.generateCurriculum);
 
 // POST /api/notes-explain
-router.post('/notes-explain', geminiModule.explainUploadedNotes);
+router.post('/notes-explain', geminiModule.default.explainUploadedNotes);
 
 // POST /api/stress-trigger 
-router.post('/stress-trigger', wellnessModule.triggerAFL);
+router.post('/stress-trigger', wellnessModule.default.triggerAFL);
 
 // POST /api/auth/login
-router.post('/auth/login', authModule.loginUser);
+router.post('/auth/login', authModule.default.loginUser);
 
 
 // Export the router
