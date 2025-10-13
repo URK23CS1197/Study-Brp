@@ -1,25 +1,26 @@
-// server/routes/api_routes.js (FINAL, WORKING FIX)
+// server/routes/api_routes.js (FINAL, STABLE FIX)
 
 import express from 'express';
 const router = express.Router();
 
-// 🔑 FINAL FIX: Import only the NAMED functions you need.
-// This resolves the "does not provide an export named 'default'" error.
-import { generateCurriculum, explainUploadedNotes } from '../controllers/gemini_controller.js';
-import { triggerAFL } from '../controllers/wellness_controller.js';
-import { loginUser } from '../controllers/auth_controller.js'; 
+// 🔑 FINAL FIX: Import the entire module as a single object (default export)
+import geminiController from '../controllers/gemini_controller.js';
+import wellnessController from '../controllers/wellness_controller.js';
+import authController from '../controllers/auth_controller.js'; 
 
 
 // --- Routes ---
-// FIX: The functions are now imported directly as variables, ready to be used as callbacks.
 
-router.post('/curriculum', generateCurriculum);
+// We access the functions directly as properties of the imported object.
+// This matches the 'export default { func1, func2 }' in the controller files.
 
-router.post('/notes-explain', explainUploadedNotes);
+router.post('/curriculum', geminiController.generateCurriculum);
 
-router.post('/stress-trigger', triggerAFL);
+router.post('/notes-explain', geminiController.explainUploadedNotes);
 
-router.post('/auth/login', loginUser);
+router.post('/stress-trigger', wellnessController.triggerAFL);
+
+router.post('/auth/login', authController.loginUser);
 
 
 // Export the router
