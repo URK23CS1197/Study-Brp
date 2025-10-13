@@ -1,11 +1,11 @@
-// server/controllers/auth_controller.js (ABSOLUTE SAFEST BYPASS)
+// server/controllers/auth_controller.js (FINAL, CRASH-FREE BYPASS)
 
 /**
  * Handles user login (TEMPORARY DEMO BYPASS).
  * This function completely ignores the database and immediately issues a mock token.
- * This should resolve all internal server crashes caused by database query failures.
+ * It is defined as a NAMED EXPORT to satisfy the router's import { loginUser } request.
  */
-const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
     // 1. Log the attempt but skip the database logic
     const { email } = req.body;
     
@@ -26,7 +26,5 @@ const loginUser = async (req, res) => {
     });
 };
 
-// Export the function using the ES Module standard
-export default {
-    loginUser
-};
+// ❌ REMOVED: export default { loginUser }; 
+// The function is now exported directly using 'export const'.
