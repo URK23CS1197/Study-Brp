@@ -1,26 +1,25 @@
-// server/routes/api_routes.js (FINAL, STABLE FIX)
+// server/routes/api_routes.js (FINAL, WORKING FIX)
 
 import express from 'express';
 const router = express.Router();
 
-// 🔑 FINAL FIX: Import the entire module as a single object (default export)
-import geminiController from '../controllers/gemini_controller.js';
-import wellnessController from '../controllers/wellness_controller.js';
-import authController from '../controllers/auth_controller.js'; 
+// 🔑 FINAL FIX: Import ONLY the named functions you need.
+// This is the correct structure for files that use 'export const'.
+import { generateCurriculum, explainUploadedNotes } from '../controllers/gemini_controller.js';
+import { triggerAFL } from '../controllers/wellness_controller.js';
+import { loginUser } from '../controllers/auth_controller.js'; 
 
 
 // --- Routes ---
+// The functions are now variables ready to be used as callbacks.
 
-// We access the functions directly as properties of the imported object.
-// This matches the 'export default { func1, func2 }' in the controller files.
+router.post('/curriculum', generateCurriculum);
 
-router.post('/curriculum', geminiController.generateCurriculum);
+router.post('/notes-explain', explainUploadedNotes);
 
-router.post('/notes-explain', geminiController.explainUploadedNotes);
+router.post('/stress-trigger', triggerAFL);
 
-router.post('/stress-trigger', wellnessController.triggerAFL);
-
-router.post('/auth/login', authController.loginUser);
+router.post('/auth/login', loginUser);
 
 
 // Export the router
