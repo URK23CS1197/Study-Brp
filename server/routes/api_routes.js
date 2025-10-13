@@ -3,27 +3,28 @@
 import express from 'express';
 const router = express.Router();
 
-// 1. Import all modules using the import * as syntax
-import * as geminiModule from '../controllers/gemini_controller.js';
-import * as wellnessModule from '../controllers/wellness_controller.js';
-import * as authModule from '../controllers/auth_controller.js'; 
+// 🔑 FINAL FIX: Use the simple default import (assuming controllers use 'export default { ... }')
+import geminiController from '../controllers/gemini_controller.js';
+import wellnessController from '../controllers/wellness_controller.js';
+import authController from '../controllers/auth_controller.js'; 
 
 
 // --- Routes ---
 
-// FIX: We access the function directly as a property of the imported module object.
+// FIX: Access the functions directly. Since the import is 'geminiController', 
+// this object *is* the controller module, so its functions are properties.
 
-// POST /api/curriculum (Fixes Line 19)
-router.post('/curriculum', geminiModule.generateCurriculum);
+// Line 17 (The crash point)
+router.post('/curriculum', geminiController.generateCurriculum); 
 
-// POST /api/notes-explain
-router.post('/notes-explain', geminiModule.explainUploadedNotes);
+// Line 19
+router.post('/notes-explain', geminiController.explainUploadedNotes);
 
-// POST /api/stress-trigger 
-router.post('/stress-trigger', wellnessModule.triggerAFL);
+// Line 22
+router.post('/stress-trigger', wellnessController.triggerAFL);
 
-// POST /api/auth/login
-router.post('/auth/login', authModule.loginUser);
+// Line 25
+router.post('/auth/login', authController.loginUser);
 
 
 // Export the router
