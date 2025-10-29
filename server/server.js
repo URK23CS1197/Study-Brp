@@ -1,72 +1,83 @@
-// server/server.js - FINAL, STABLE CODE FOR RENDER
+// server/server.js - FINAL GROK-POWERED, RENDER-OPTIMIZED, CRASH-PROOF
 
-// 🔑 Module Fix: Using standard ESM imports
 import express from 'express';
 import cors from 'cors';
-import { Pool } from 'pg'; 
-import dotenv from 'dotenv';
-import apiRoutes from './routes/api_routes.js'; 
+import { Pool } from 'pg';
+import { config } from 'dotenv';
+import apiRoutes from './routes/api_routes.js';
 
-// Load environment variables 
-dotenv.config();
+// Load .env
+config();
 
 const app = express();
-const HOST = '0.0.0.0'; 
+const HOST = '0.0.0.0';
 const PORT = process.env.PORT || 5000;
 
-// --- 1. Middleware ---
-// 🔑 FIX: Universal CORS (*) to ensure no frontend errors
-app.use(cors()); 
-app.use(express.json({ limit: '5mb' })); 
+// --- MIDDLEWARE ---
+app.use(cors({
+  origin: '*', // Allow all (adjust in prod if needed)
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' })); // For base64 images
 
-// --- 2. Database Connection Setup (Using Pool for Stability) ---
-
+// --- DATABASE POOL (Render + SSL Safe) ---
 const pool = new Pool({
-    // IMPORTANT: DATABASE_URL must contain the host, username, password, and database name.
-    connectionString: process.env.DATABASE_URL, 
-    
-    // FIX: Removing the explicit 'ssl' object to prevent the certificate error
-    // We rely on the connection string itself to handle SSL parameters like ?sslmode=require
-    
-    max: 5, // Max clients in the pool
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000, 
+  connectionString: process.env.DATABASE_URL,
+  // Render auto-handles SSL → no need to force
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
 });
 
-
-// Use an async function to handle the connection and server start
+// --- START SERVER WITH DB CHECK ---
 async function startServer() {
-    try {
-        // Test connection once before starting server (CRITICAL STABILITY CHECK)
-        const client = await pool.connect();
-        client.release(); // Release the client immediately
-        console.log('Database pool initialized and connected successfully.');
+  try {
+    // Verify DB connection
+    const client = await pool.connect();
+    console.log('PostgreSQL connected via pool');
+    client.release();
 
-        // Pass the connection pool instance to the request object
-        app.use((req, res, next) => {
-            req.db = pool; 
-            next();
-        });
+    // Attach DB to all requests
+    app.use((req, res, next) => {
+      req.db = pool;
+      next();
+    });
 
-        // --- 3. Routes ---
-        app.use('/api', apiRoutes); 
+    // --- ROUTES ---
+    app.use('/api', apiRoutes);
 
-        // Simple health check endpoint 
-        app.get('/', (req, res) => {
-            res.status(200).json({ message: 'AI Study Assistant Backend is running!' });
-        });
+    // Health Check
+    app.get('/', (req, res) => {
+      res.json({
+        message: 'Study-Bro Backend LIVE with GROK AI',
+        ai: 'Grok-2-Latest',
+        status: 'ACTIVE',
+        timestamp: new Date().toISOString()
+      });
+    });
 
-        // --- 4. Server Start ---
-        app.listen(PORT, HOST, () => {
-            console.log(`Server running and listening on http://${HOST}:${PORT}`);
-        });
+    // 404 Handler
+    app.use('*', (req, res) => {
+      res.status(404).json({ error: 'Route not found' });
+    });
 
-    } catch (err) {
-        // Log the severe error and exit the process
-        console.error('FATAL ERROR: Failed to connect to database or start server.', err.stack);
-        process.exit(1); 
-    }
+    // Global Error Handler
+    app.use((err, req, res, next) => {
+      console.error('UNHANDLED ERROR:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    });
+
+    // --- LISTEN ---
+    app.listen(PORT, HOST, () => {
+      console.log(`GROK SERVER RUNNING @ http://localhost:${PORT}`);
+      console.log(`Deployed on Render: https://your-app.onrender.com`);
+    });
+
+  } catch (err) {
+    console.error('FATAL: Failed to start server', err);
+    process.exit(1);
+  }
 }
 
-// Execute the function to start the application
+// Start
 startServer();
